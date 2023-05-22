@@ -1,60 +1,26 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
-// #![allow(unused)]
+#![allow(unused)]
+mod state;
 
-use std::sync::Mutex;
-
-use rand::{seq::IteratorRandom, thread_rng, Rng};
+use state::GameState;
+use tauri::State;
 
 fn main() {
-    let state = GameState::default();
-
     tauri::Builder::default()
         .invoke_handler(tauri::generate_handler![greet])
-        .manage(state)
+        .manage(GameState::new())
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
 
-struct GameState {
-    grid_cell: Mutex<Vec<u16>>,
-}
-impl GameState {
-    fn default() -> Self {
-        Self {
-            grid_cell: Mutex::new(initial_random_state()),
-        }
-    }
-}
-
 #[tauri::command]
-fn greet(key: &str) -> String {
+fn greet(key: &str, state: State<GameState>) -> Vec<u16> {
     match key {
-        "ArrowLeft" => {
-            todo!()
-        }
-        "ArrowRight" => {
-            todo!()
-        }
-        "ArrowUp" => {
-            todo!()
-        }
-        "ArrowDown" => {
-            todo!()
-        }
-        _ => todo!(),
+        "ArrowUp" => state.up(),
+        "ArrowDown" => state.down(),
+        "ArrowLeft" => state.left(),
+        "ArrowRight" => state.right(),
+        _ => state.current(),
     }
-}
-
-fn initial_random_state() -> Vec<u16> {
-    let mut grid_cells = Vec::from([0 as u16; 16]);
-    let mut rng = thread_rng();
-    let range: Vec<u8> = (0..=15).collect();
-    let random_indexes = range.iter().choose_multiple(&mut rng, 2);
-
-    for index in random_indexes.into_iter() {
-        let rand_value = rng.gen_range(1..=2) * 2;
-        grid_cells[*index as usize] = rand_value;
-    }
-    grid_cells
 }
